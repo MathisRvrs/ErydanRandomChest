@@ -1,0 +1,8 @@
+name: ErydanRandomChest
+version: 1.0
+author: NaiKyzZ
+main: fr.naikyzz.erydanrandomchest.ErydanRandomChest
+commands:
+  rc:
+    description: Effectuer une annonce au milieu de l'écran
+    permission: rc.use
