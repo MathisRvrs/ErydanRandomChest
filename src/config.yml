@@ -1,0 +1,7 @@
+name: ErydanRandomChest
+author: NaiKyzZ
+
+#Configuration des items qui vont apparaître dans le coffre
+config:
+  chest:
+    items:

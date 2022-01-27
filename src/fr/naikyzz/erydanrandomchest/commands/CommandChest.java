@@ -1,5 +1,6 @@
 package fr.naikyzz.erydanrandomchest.commands;
 
+import fr.naikyzz.erydanrandomchest.ErydanRandomChest;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -12,6 +13,13 @@ import org.bukkit.entity.Player;
 import java.util.Random;
 
 public class CommandChest implements CommandExecutor {
+
+    private final ErydanRandomChest main;
+
+    public CommandChest(ErydanRandomChest main) {
+        this.main = main;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String msg, String[] args) {
 

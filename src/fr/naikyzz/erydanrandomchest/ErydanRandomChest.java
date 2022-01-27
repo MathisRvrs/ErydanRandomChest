@@ -7,8 +7,9 @@ public class ErydanRandomChest extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         System.out.println("ErydanRandomChest a bien démarré !");
-        getCommand("rc").setExecutor(new CommandChest());
+        getCommand("rc").setExecutor(new CommandChest(this));
     }
 
     @Override
