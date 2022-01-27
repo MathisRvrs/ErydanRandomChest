@@ -2,6 +2,21 @@ name: ErydanRandomChest
 author: NaiKyzZ
 
 #Configuration des items qui vont apparaître dans le coffre
-config:
-  chest:
-    items:
+chest:
+  items:
+    id:
+      1:
+        id: DIAMOND_SWORD
+        number: 1
+      2:
+        id: APPLE
+        number: 6
+      3:
+        id: STONE
+        number: 32
+      4:
+        id: REDSTONE
+        number: 32
+      5:
+        id: TNT
+        number: 16
