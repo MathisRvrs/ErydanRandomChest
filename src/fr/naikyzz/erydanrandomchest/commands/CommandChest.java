@@ -5,10 +5,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Random;
 
@@ -16,8 +20,8 @@ public class CommandChest implements CommandExecutor {
 
     private final ErydanRandomChest main;
 
-    public CommandChest(ErydanRandomChest main) {
-        this.main = main;
+    public CommandChest(ErydanRandomChest erc) {
+        this.main = erc;
     }
 
     @Override
@@ -27,7 +31,15 @@ public class CommandChest implements CommandExecutor {
             if (cmd.getName().equalsIgnoreCase("rc")) {
                 if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
                     sender.sendMessage("§eLa commande est: §c/rc §c<Xmax> <Xmin> <Ymax> <Ymin> !");
+                    return false;
                 }
+
+                if (args.length == 0 || args[0].equalsIgnoreCase("reload")){
+                    sender.sendMessage(main.getConfig().getString("messages.reload").replace("&","§"));
+                    main.reloadConfig();
+                    return false;
+                }
+
                 if (args.length >= 1) {
                     StringBuilder bc = new StringBuilder();
                     String[] tab;
@@ -41,7 +53,7 @@ public class CommandChest implements CommandExecutor {
                     tab = bc.toString().split(" ");
 
 
-                    sender.sendMessage("§c§l" + bc.length() + "_" + bc.toString() + "_" + tab.length);
+                    /*sender.sendMessage("§c§l" + bc.length() + "_" + bc.toString() + "_" + tab.length);
 
                     for (int i = 0; i < tab.length; i++) { // TESTS
                         if (i != 3) {
@@ -50,7 +62,7 @@ public class CommandChest implements CommandExecutor {
                             sender.sendMessage(tab[i] + "tab[" + i + "]");
                     }
 
-                    sender.sendMessage("Passage");
+                    sender.sendMessage("Passage");*/
 
                     Random rdm = new Random();
 
@@ -61,10 +73,33 @@ public class CommandChest implements CommandExecutor {
                     sender.sendMessage(Integer.toString(z));
                     y = getHighestBlock(Bukkit.getWorld("world"), x, z);
 
-                    Location chest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
-                    chest.getBlock().setType(Material.CHEST);
+                    Location locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
+                    locChest.getBlock().setType(Material.CHEST);
                     Bukkit.broadcastMessage("§aUn coffre a spawn en §ex: §c" + x + " §ey: §c" + y + " §ez: §c" + z + " §e! §aFoncez !");
 
+                    Chest chest = (Chest) locChest.getBlock().getState();
+                    Inventory invChest = chest.getInventory();
+
+                    for(String itemLine : main.getConfig().getStringList("chest.type")) {
+                        String[] split = itemLine.split(" ");
+                        Bukkit.broadcastMessage(Integer.toString(split.length));
+                        for (int i = 0; i < split.length; i++){
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(split[i] + " ");
+                            Bukkit.broadcastMessage(sb.toString());
+                        }
+                        if (split.length > 2) {
+                            if (Integer.parseInt(split[2]) == 1) {
+                                ItemStack item = new ItemStack(Material.getMaterial(split[0]), Integer.parseInt(split[1]), (short) Integer.parseInt(split[2]));
+                                invChest.setItem(rdm.nextInt(27) + 1,item);
+                            }
+                        }
+
+                        else {
+                            ItemStack item = new ItemStack(Material.getMaterial(split[0]), Integer.parseInt(split[1]));
+                            invChest.setItem(rdm.nextInt(27) + 1,item);
+                        }
+                    }
                 }
             }
         }

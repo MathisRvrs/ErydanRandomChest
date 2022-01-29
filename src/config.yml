@@ -1,22 +1,17 @@
-name: ErydanRandomChest
+﻿name: ErydanRandomChest
 author: NaiKyzZ
+
+#Messages du plugin
+messages:
+  reload: "&eErydanRandomChest a bien été reload !"
 
 #Configuration des items qui vont apparaître dans le coffre
 chest:
-  items:
-    id:
-      1:
-        id: DIAMOND_SWORD
-        number: 1
-      2:
-        id: APPLE
-        number: 6
-      3:
-        id: STONE
-        number: 32
-      4:
-        id: REDSTONE
-        number: 32
-      5:
-        id: TNT
-        number: 16
+    type:
+      - APPLE 16
+      - GOLDEN_APPLE 16 1
+      - DIAMOND_SWORD 1
+      - BEACON 1
+# - ==: org.bukkit.inventory.ItemStack
+#  type: STONE
+
