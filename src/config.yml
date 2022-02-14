@@ -6,12 +6,30 @@ messages:
   reload: "&eErydanRandomChest a bien été reload !"
 
 #Configuration des items qui vont apparaître dans le coffre
+#Liste des enchantements https://helpch.at/docs/1.8.8/index.html?org/bukkit/event/enchantment/EnchantItemEvent.html
 chest:
-    type:
-      - APPLE 16
-      - GOLDEN_APPLE 16 1
-      - DIAMOND_SWORD 1
-      - BEACON 1
-# - ==: org.bukkit.inventory.ItemStack
-#  type: STONE
-
+  item:
+    1:
+      material:
+        DIAMOND_SWORD
+      amount:
+        1
+      enchanted: #False if nothing or if you cant enchant this material
+        true
+      enchants:
+        -DAMAGE_ALL 2
+        -FIRE_ASPECT 1
+        -DAMAGE_UNDEAD 5
+      sub:
+        false
+    2:
+      material:
+        GOLDEN_APPLE
+      amount:
+        12
+      enchanted:
+        false
+      sub:
+        true
+      subname:
+        1

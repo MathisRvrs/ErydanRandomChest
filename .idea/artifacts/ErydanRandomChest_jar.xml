@@ -3,7 +3,6 @@
     <output-path>$PROJECT_DIR$/../../serveur/plugins</output-path>
     <root id="archive" name="ErydanRandomChest.jar">
       <element id="module-output" name="ErydanRandomChest" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../../serveur/spigot.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
