@@ -9,6 +9,8 @@ import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -34,8 +36,8 @@ public class CommandChest implements CommandExecutor {
                     return false;
                 }
 
-                if (args.length == 0 || args[0].equalsIgnoreCase("reload")){
-                    sender.sendMessage(main.getConfig().getString("messages.reload").replace("&","§"));
+                if (args.length == 0 || args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl")) {
+                    sender.sendMessage(main.getConfig().getString("messages.reload").replace("&", "§"));
                     main.reloadConfig();
                     return false;
                 }
@@ -44,33 +46,19 @@ public class CommandChest implements CommandExecutor {
                     StringBuilder bc = new StringBuilder();
                     String[] tab;
 
-                    for (String part : args) {
+                    for (String part : args) { //COORDONNES
                         bc.append(part + " ");
                     }
 
-                    sender.sendMessage(bc.toString());
+                    sender.sendMessage(bc.toString()); //AFFICHAGE COORDS
                     bc.setLength(bc.length() - 1);
                     tab = bc.toString().split(" ");
-
-
-                    /*sender.sendMessage("§c§l" + bc.length() + "_" + bc.toString() + "_" + tab.length);
-
-                    for (int i = 0; i < tab.length; i++) { // TESTS
-                        if (i != 3) {
-                            sender.sendMessage(tab[i] + "tab[" + i + "]" + "_");
-                        } else
-                            sender.sendMessage(tab[i] + "tab[" + i + "]");
-                    }
-
-                    sender.sendMessage("Passage");*/
 
                     Random rdm = new Random();
 
                     int x, y, z;
                     x = rdm.nextInt(Integer.parseInt(tab[0]) - Integer.parseInt(tab[1]) + Integer.parseInt(tab[1]));
-                    sender.sendMessage(Integer.toString(x));
                     z = rdm.nextInt(Integer.parseInt(tab[2]) - Integer.parseInt(tab[3].trim()) + Integer.parseInt(tab[3].trim()));
-                    sender.sendMessage(Integer.toString(z));
                     y = getHighestBlock(Bukkit.getWorld("world"), x, z);
 
                     Location locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
@@ -80,25 +68,36 @@ public class CommandChest implements CommandExecutor {
                     Chest chest = (Chest) locChest.getBlock().getState();
                     Inventory invChest = chest.getInventory();
 
-                    for(String itemLine : main.getConfig().getStringList("chest.type")) {
-                        String[] split = itemLine.split(" ");
-                        Bukkit.broadcastMessage(Integer.toString(split.length));
-                        for (int i = 0; i < split.length; i++){
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(split[i] + " ");
-                            Bukkit.broadcastMessage(sb.toString());
-                        }
-                        if (split.length > 2) {
-                            if (Integer.parseInt(split[2]) == 1) {
-                                ItemStack item = new ItemStack(Material.getMaterial(split[0]), Integer.parseInt(split[1]), (short) Integer.parseInt(split[2]));
-                                invChest.setItem(rdm.nextInt(27) + 1,item);
+                    int num = 1;
+                    Bukkit.broadcastMessage("1: " + num);
+
+                    for (String key: main.getConfig().getConfigurationSection("chest.item").getKeys(false)){//get config
+                        try {
+                            int id = Integer.valueOf(key);
+                            String mat = main.getConfig().getString("chest.item." + id + ".material");
+                            int amount = Integer.parseInt(main.getConfig().getString("chest.item." + id + ".amount"));
+                            Bukkit.broadcastMessage(mat);
+                            Bukkit.broadcastMessage(String.valueOf(amount));
+
+                            ItemStack item = new ItemStack(Material.getMaterial(mat),amount);
+
+                            Bukkit.broadcastMessage(main.getConfig().getString("chest.item." + id + ".enchanted"));
+
+                            if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("true")){
+                                StringBuilder sb = new StringBuilder();
+                                String[] enchants;
+                                sb.append(main.getConfig().getString("chest.item." + id + ".enchants"));
+                                enchants = sb.toString().split(" ");
+                                item.addEnchantment(Enchantment.getByName(enchants[0].trim()), Integer.parseInt(enchants[1].trim()));
+                                invChest.setItem(rdm.nextInt(27) + 1, item);
+
                             }
+                            else invChest.setItem(rdm.nextInt(27) + 1, item);
+
+                        } catch (NumberFormatException e) {
+                            System.out.println("ERROR: Il faut entrer un nombre après chest.item. !");
                         }
 
-                        else {
-                            ItemStack item = new ItemStack(Material.getMaterial(split[0]), Integer.parseInt(split[1]));
-                            invChest.setItem(rdm.nextInt(27) + 1,item);
-                        }
                     }
                 }
             }

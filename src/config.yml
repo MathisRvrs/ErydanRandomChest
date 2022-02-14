@@ -7,11 +7,20 @@ messages:
 
 #Configuration des items qui vont apparaître dans le coffre
 chest:
-    type:
-      - APPLE 16
-      - GOLDEN_APPLE 16 1
-      - DIAMOND_SWORD 1
-      - BEACON 1
-# - ==: org.bukkit.inventory.ItemStack
-#  type: STONE
-
+  item:
+    1:
+      material:
+        DIAMOND_SWORD
+      amount:
+        1
+      enchanted: #False if nothing
+        true
+      enchants:
+        DAMAGE_ALL 2
+    2:
+      material:
+        APPLE
+      amount:
+        12
+      enchanted:
+        false
