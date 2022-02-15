@@ -18,5 +18,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="paperspigot-1.8.8-R0.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="spigot" level="project" />
+    <orderEntry type="library" name="SaberFactions" level="project" />
   </component>
 </module>
