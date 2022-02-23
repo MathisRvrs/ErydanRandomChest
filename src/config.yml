@@ -8,6 +8,8 @@ messages:
 #Configuration des items qui vont apparaître dans le coffre
 #Liste des enchantements https://helpch.at/docs/1.8.8/index.html?org/bukkit/event/enchantment/EnchantItemEvent.html
 chest:
+  maxWorld: 7500
+  minWorld: -7500
   maxitemloot:
     7
   item:

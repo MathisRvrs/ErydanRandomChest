@@ -4,5 +4,9 @@ author: NaiKyzZ
 main: fr.naikyzz.erydanrandomchest.ErydanRandomChest
 commands:
   rc:
-    description: Effectuer une annonce au milieu de l'écran
+    description: Petites aides pour la commande
     permission: rc.use
+  rcr:
+    description: Fait spawn un coffre random
+  rcp:
+    description: Fait spawn un coffre à la position de celui qui effectue la commande

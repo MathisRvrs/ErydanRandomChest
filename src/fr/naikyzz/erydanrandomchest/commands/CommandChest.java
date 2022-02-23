@@ -86,6 +86,10 @@ public class CommandChest implements CommandExecutor, Listener {
                                 sender.sendMessage("§eVous devez entrer des nombres !");
                                 return false;
                             }
+                            if (Integer.parseInt(tab[i].trim()) > Integer.parseInt(main.getConfig().getString("chest.maxWorld")) || Integer.parseInt(tab[i].trim()) < Integer.parseInt(main.getConfig().getString("chest.minWorld"))){
+                                sender.sendMessage("§eLes limites du monde sont de : §c" + main.getConfig().getString("chest.maxWorld") + " §epar §c" + main.getConfig().getString("chest.minWorld") + " §e!");
+                                return false;
+                            }
                         }
 
                         int xmax = Integer.parseInt(tab[0].trim());
