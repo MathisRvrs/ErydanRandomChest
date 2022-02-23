@@ -1,5 +1,8 @@
 package fr.naikyzz.erydanrandomchest.commands;
 
+import com.massivecraft.factions.Board;
+import com.massivecraft.factions.FLocation;
+import com.massivecraft.factions.Faction;
 import fr.naikyzz.erydanrandomchest.ErydanRandomChest;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -16,10 +19,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import com.massivecraft.factions.*;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Random;
+
+import static org.apache.commons.lang.StringUtils.isNumeric;
 
 public class CommandChest implements CommandExecutor, Listener {
 
@@ -33,8 +35,8 @@ public class CommandChest implements CommandExecutor, Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String msg, String[] args) {
 
         if (sender.hasPermission("rc.use")) {
+
             if (sender instanceof Player || sender instanceof ConsoleCommandSender) {
-                // if (sender.hasPermission("rc.use")) {
                 if (cmd.getName().equalsIgnoreCase("rc")) {
                     if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
                         sender.sendMessage("§eLa commande est: §c/rc §c<Xmax> <Xmin> <Ymax> <Ymin> !");
@@ -46,8 +48,29 @@ public class CommandChest implements CommandExecutor, Listener {
                         main.reloadConfig();
                         return false;
                     }
+                }
 
-                    if (args.length >= 1 && args.length < 4) { // met les arguments dans un string builder
+                if (sender instanceof Player) {
+                    if (cmd.getName().equalsIgnoreCase("rcp")) {
+                        if (args.length > 0) {
+                            sender.sendMessage("§eLa commande est: §c/rc §c<Xmax> <Xmin> <Ymax> <Ymin> !");
+                            return false;
+                        }
+                        Location locChest = ((Player) sender).getLocation();
+                        Faction fac = Board.getInstance().getFactionAt(new FLocation(locChest));
+
+                        spawnChest(locChest, fac);
+                    }
+                }
+
+                if (cmd.getName().equalsIgnoreCase("rcr")) {
+                    if (args.length == 0) {
+                        sender.sendMessage("§eLa commande est: §c/rcr §c<Xmax> <Xmin> <Ymax> <Ymin> !");
+                        return false;
+                    }
+
+
+                    if (args.length >= 1 && args.length < 5) { // met les arguments dans un string builder
                         StringBuilder bc = new StringBuilder();
                         String[] tab;
 
@@ -55,20 +78,23 @@ public class CommandChest implements CommandExecutor, Listener {
                             bc.append(part + " ");
                         }
 
-                        sender.sendMessage(bc.toString()); //AFFICHAGE COORDS
                         bc.setLength(bc.length() - 1);
                         tab = bc.toString().split(" ");
+
+                        for (int i = 0; i < tab.length; i++){
+                            if (!isNumeric(tab[i])){
+                                sender.sendMessage("§eVous devez entrer des nombres !");
+                                return false;
+                            }
+                        }
 
                         int xmax = Integer.parseInt(tab[0].trim());
                         int xmin = Integer.parseInt(tab[1].trim());
                         int zmax = Integer.parseInt(tab[2].trim());
                         int zmin = Integer.parseInt(tab[3].trim());
 
-
                         Location locChest = getLocation(xmax, xmin, zmax, zmin, sender);
                         Faction fac = Board.getInstance().getFactionAt(new FLocation(locChest));
-                        int nbItem = 0;
-                        Random rdm = new Random();
 
                         while (!(fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone"))) {
                             xmin -= 1;
@@ -78,79 +104,83 @@ public class CommandChest implements CommandExecutor, Listener {
                             locChest = getLocation(xmax, xmin, zmax, zmin, sender);
                             fac = Board.getInstance().getFactionAt(new FLocation(locChest));
                         }
-                        if (fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone")) {
-                            locChest.getBlock().setType(Material.CHEST);
-                            Chest chest = (Chest) locChest.getBlock().getState();
-                            Inventory invChest = chest.getInventory();
-                            Bukkit.broadcastMessage("§aUn coffre a spawn en §ex: §c" + locChest.getBlockX() + " §ey: §c" + locChest.getBlockY() + " §ez: §c" + locChest.getBlockZ() + " §e! §aFoncez !");
 
-                            for (String key : main.getConfig().getConfigurationSection("chest.item").getKeys(false)) {//get config / Mettre items dans le coffre
-                                try {
-                                    if (nbItem < Integer.parseInt(main.getConfig().getString("chest.maxitemloot"))) {
-                                        int id = Integer.valueOf(key);
-                                        int chance = main.getConfig().getInt("chest.item." + id + ".chance");
-                                        double random = getRandom(100);
-                                        String mat = main.getConfig().getString("chest.item." + id + ".material");
-                                        int amount = Integer.parseInt(main.getConfig().getString("chest.item." + id + ".amount"));
-                                        ItemStack item = new ItemStack(Material.getMaterial(mat), amount);
+                        spawnChest(locChest, fac); // fait spawn un coffre
 
-                                        if (chance >= random) {
-                                            if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("true")) { //Si enchantements
-                                                StringBuilder sb = new StringBuilder();
-                                                String[] enchant_nb;
-                                                String[] enchant_names;
-                                                sb.append(main.getConfig().getString("chest.item." + id + ".enchants"));
-
-                                                enchant_names = sb.toString().split("-");
-                                                for (int i = 0; i < enchant_names.length - 1; i++) { //Ajout des enchantements
-                                                    sb = new StringBuilder();
-                                                    sb.append(enchant_names[i + 1]);
-                                                    enchant_nb = sb.toString().split(" ");
-                                                    item.addEnchantment(Enchantment.getByName(enchant_nb[0].trim()), Integer.parseInt(enchant_nb[1].trim()));
-                                                }
-                                                int slot = rdm.nextInt(27);
-                                                while (invChest.getItem(slot) != null) {
-                                                    slot = rdm.nextInt(27);
-                                                }
-                                                invChest.setItem(slot, item); //ajout item si enchanté
-                                            }
-
-                                            if (main.getConfig().getString("chest.item." + id + ".sub").equalsIgnoreCase("true")) {
-                                                int subname = main.getConfig().getInt("chest.item." + id + ".subname");
-                                                ItemStack metaItem = new ItemStack(Material.getMaterial(mat), Integer.parseInt(String.valueOf(amount).trim()), (short) Integer.parseInt(String.valueOf(subname).trim()));
-                                                int slot = rdm.nextInt(27);
-                                                while (invChest.getItem(slot) != null) {
-                                                    slot = rdm.nextInt(27);
-                                                }
-                                                invChest.setItem(slot, metaItem);
-
-                                            } else if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("false")) {
-                                                int slot = rdm.nextInt(27);
-                                                while (invChest.getItem(slot) != null) {
-                                                    slot = rdm.nextInt(27);
-                                                }
-                                                invChest.setItem(slot, item);
-                                            }
-                                        }
-                                    }
-
-                                    nbItem++;
-                                } catch (NumberFormatException e) { //erreur config
-                                    System.out.println("ERROR: Il faut entrer un nombre après chest.item. !");
-                                }
-
-                            }
-                        } else {
-                            Bukkit.broadcastMessage("§eUne faction se trouvait au point de spawn, recommencez !");
-                            return true;
-                        }
-
-                    }
-                    else sender.sendMessage("Vous avez entrer trop d'arguments !");
+                    } else sender.sendMessage("§eVous avez entrer trop d'arguments !");
                 }
             }
         }
         return true;
+    }
+
+    public void spawnChest(Location locChest, Faction fac) {
+        int nbItem = 0;
+        Random rdm = new Random();
+
+        if (fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone")) {
+            locChest.getBlock().setType(Material.CHEST);
+            Chest chest = (Chest) locChest.getBlock().getState();
+            Inventory invChest = chest.getInventory();
+            Bukkit.broadcastMessage("§aUn coffre a spawn en §ex: §c" + locChest.getBlockX() + " §ey: §c" + locChest.getBlockY() + " §ez: §c" + locChest.getBlockZ() + " §e! §aFoncez !");
+
+            for (String key : main.getConfig().getConfigurationSection("chest.item").getKeys(false)) {//get config / Mettre items dans le coffre
+                try {
+                    if (nbItem < Integer.parseInt(main.getConfig().getString("chest.maxitemloot"))) {
+                        int id = Integer.valueOf(key);
+                        int chance = main.getConfig().getInt("chest.item." + id + ".chance");
+                        double random = getRandom(100);
+                        String mat = main.getConfig().getString("chest.item." + id + ".material");
+                        int amount = Integer.parseInt(main.getConfig().getString("chest.item." + id + ".amount"));
+                        ItemStack item = new ItemStack(Material.getMaterial(mat), amount);
+
+                        if (chance >= random) {
+                            if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("true")) { //Si enchantements
+                                StringBuilder sb = new StringBuilder();
+                                String[] enchant_nb;
+                                String[] enchant_names;
+                                sb.append(main.getConfig().getString("chest.item." + id + ".enchants"));
+
+                                enchant_names = sb.toString().split("-");
+                                for (int i = 0; i < enchant_names.length - 1; i++) { //Ajout des enchantements
+                                    sb = new StringBuilder();
+                                    sb.append(enchant_names[i + 1]);
+                                    enchant_nb = sb.toString().split(" ");
+                                    item.addEnchantment(Enchantment.getByName(enchant_nb[0].trim()), Integer.parseInt(enchant_nb[1].trim()));
+                                }
+                                int slot = rdm.nextInt(27);
+                                while (invChest.getItem(slot) != null) {
+                                    slot = rdm.nextInt(27);
+                                }
+                                invChest.setItem(slot, item); //ajout item si enchanté
+                            }
+
+                            if (main.getConfig().getString("chest.item." + id + ".sub").equalsIgnoreCase("true")) {
+                                int subname = main.getConfig().getInt("chest.item." + id + ".subname");
+                                ItemStack metaItem = new ItemStack(Material.getMaterial(mat), Integer.parseInt(String.valueOf(amount).trim()), (short) Integer.parseInt(String.valueOf(subname).trim()));
+                                int slot = rdm.nextInt(27);
+                                while (invChest.getItem(slot) != null) {
+                                    slot = rdm.nextInt(27);
+                                }
+                                invChest.setItem(slot, metaItem);
+
+                            } else if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("false")) {
+                                int slot = rdm.nextInt(27);
+                                while (invChest.getItem(slot) != null) {
+                                    slot = rdm.nextInt(27);
+                                }
+                                invChest.setItem(slot, item);
+                            }
+                        }
+                    }
+
+                    nbItem++;
+                } catch (NumberFormatException e) { //erreur config
+                    System.out.println("ERROR: Il faut entrer un nombre après chest.item. !");
+                }
+
+            }
+        }
     }
 
 

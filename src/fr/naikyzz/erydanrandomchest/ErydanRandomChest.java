@@ -10,6 +10,8 @@ public class ErydanRandomChest extends JavaPlugin {
         this.saveDefaultConfig();
         System.out.println("ErydanRandomChest a bien démarré !");
         getCommand("rc").setExecutor(new CommandChest(this));
+        getCommand("rcr").setExecutor(new CommandChest(this));
+        getCommand("rcp").setExecutor(new CommandChest(this));
     }
 
     @Override
