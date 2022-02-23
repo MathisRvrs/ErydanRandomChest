@@ -9,6 +9,7 @@ import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import com.massivecraft.factions.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
 
@@ -30,116 +32,183 @@ public class CommandChest implements CommandExecutor, Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String msg, String[] args) {
 
-
-        if (sender instanceof Player) {
-            if (cmd.getName().equalsIgnoreCase("rc")) {
-                if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-                    sender.sendMessage("§eLa commande est: §c/rc §c<Xmax> <Xmin> <Ymax> <Ymin> !");
-                    return false;
-                }
-
-                if (args.length == 0 || args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl")) {
-                    sender.sendMessage(main.getConfig().getString("messages.reload").replace("&", "§"));
-                    main.reloadConfig();
-                    return false;
-                }
-
-                if (args.length >= 1) {
-                    StringBuilder bc = new StringBuilder();
-                    String[] tab;
-
-                    for (String part : args) { //COORDONNES
-                        bc.append(part + " ");
+        if (sender.hasPermission("rc.use")) {
+            if (sender instanceof Player || sender instanceof ConsoleCommandSender) {
+                // if (sender.hasPermission("rc.use")) {
+                if (cmd.getName().equalsIgnoreCase("rc")) {
+                    if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+                        sender.sendMessage("§eLa commande est: §c/rc §c<Xmax> <Xmin> <Ymax> <Ymin> !");
+                        return false;
                     }
 
-                    sender.sendMessage(bc.toString()); //AFFICHAGE COORDS
-                    bc.setLength(bc.length() - 1);
-                    tab = bc.toString().split(" ");
+                    if (args.length == 0 || args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl")) { //reload le plugin
+                        sender.sendMessage(main.getConfig().getString("messages.reload").replace("&", "§"));
+                        main.reloadConfig();
+                        return false;
+                    }
 
-                    Random rdm = new Random();
+                    if (args.length >= 1 && args.length < 4) { // met les arguments dans un string builder
+                        StringBuilder bc = new StringBuilder();
+                        String[] tab;
 
-                    int x, y, z;
-                    x = rdm.nextInt(Integer.parseInt(tab[0]) - Integer.parseInt(tab[1]) + Integer.parseInt(tab[1]));
-                    z = rdm.nextInt(Integer.parseInt(tab[2]) - Integer.parseInt(tab[3].trim()) + Integer.parseInt(tab[3].trim()));
-                    y = getHighestBlock(Bukkit.getWorld("world"), x, z);
-                    Location locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
-                    Faction fac = Board.getInstance().getFactionAt(new FLocation(locChest));
-                    int nbItem = 0;
+                        for (String part : args) { //COORDONNES
+                            bc.append(part + " ");
+                        }
 
-                    if (fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone")) {
-                        locChest.getBlock().setType(Material.CHEST);
-                        Chest chest = (Chest) locChest.getBlock().getState();
-                        Inventory invChest = chest.getInventory();
-                        Bukkit.broadcastMessage("§aUn coffre a spawn en §ex: §c" + x + " §ey: §c" + y + " §ez: §c" + z + " §e! §aFoncez !");
+                        sender.sendMessage(bc.toString()); //AFFICHAGE COORDS
+                        bc.setLength(bc.length() - 1);
+                        tab = bc.toString().split(" ");
 
-                        for (String key : main.getConfig().getConfigurationSection("chest.item").getKeys(false)) {//get config / Mettre items dans le coffre
-                            try {
+                        int xmax = Integer.parseInt(tab[0].trim());
+                        int xmin = Integer.parseInt(tab[1].trim());
+                        int zmax = Integer.parseInt(tab[2].trim());
+                        int zmin = Integer.parseInt(tab[3].trim());
 
-                                Bukkit.broadcastMessage(fac.getTag());
 
-                                if (nbItem < Integer.parseInt(main.getConfig().getString("chest.maxitemloot"))) {
-                                    int id = Integer.valueOf(key);
-                                    int chance = main.getConfig().getInt("chest.item." + id + ".chance");
-                                    double random = getRandom(100);
-                                    String mat = main.getConfig().getString("chest.item." + id + ".material");
-                                    int amount = Integer.parseInt(main.getConfig().getString("chest.item." + id + ".amount"));
-                                    ItemStack item = new ItemStack(Material.getMaterial(mat), amount);
+                        Location locChest = getLocation(xmax, xmin, zmax, zmin, sender);
+                        Faction fac = Board.getInstance().getFactionAt(new FLocation(locChest));
+                        int nbItem = 0;
+                        Random rdm = new Random();
 
-                                    if (chance >= random) {
-                                        if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("true")) { //Si enchantements
-                                            StringBuilder sb = new StringBuilder();
-                                            String[] enchant_nb;
-                                            String[] enchant_names;
-                                            sb.append(main.getConfig().getString("chest.item." + id + ".enchants"));
+                        while (!(fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone"))) {
+                            xmin -= 1;
+                            xmax += 1;
+                            zmin -= 1;
+                            zmax += 1;
+                            locChest = getLocation(xmax, xmin, zmax, zmin, sender);
+                            fac = Board.getInstance().getFactionAt(new FLocation(locChest));
+                        }
+                        if (fac.getTag().contains("Wilderness") || fac.getTag().contains("WarZone") || fac.getTag().contains("SafeZone")) {
+                            locChest.getBlock().setType(Material.CHEST);
+                            Chest chest = (Chest) locChest.getBlock().getState();
+                            Inventory invChest = chest.getInventory();
+                            Bukkit.broadcastMessage("§aUn coffre a spawn en §ex: §c" + locChest.getBlockX() + " §ey: §c" + locChest.getBlockY() + " §ez: §c" + locChest.getBlockZ() + " §e! §aFoncez !");
 
-                                            enchant_names = sb.toString().split("-");
-                                            for (int i = 0; i < enchant_names.length - 1; i++) { //Ajout des enchantements
-                                                sb = new StringBuilder();
-                                                sb.append(enchant_names[i + 1]);
-                                                enchant_nb = sb.toString().split(" ");
-                                                item.addEnchantment(Enchantment.getByName(enchant_nb[0].trim()), Integer.parseInt(enchant_nb[1].trim()));
+                            for (String key : main.getConfig().getConfigurationSection("chest.item").getKeys(false)) {//get config / Mettre items dans le coffre
+                                try {
+                                    if (nbItem < Integer.parseInt(main.getConfig().getString("chest.maxitemloot"))) {
+                                        int id = Integer.valueOf(key);
+                                        int chance = main.getConfig().getInt("chest.item." + id + ".chance");
+                                        double random = getRandom(100);
+                                        String mat = main.getConfig().getString("chest.item." + id + ".material");
+                                        int amount = Integer.parseInt(main.getConfig().getString("chest.item." + id + ".amount"));
+                                        ItemStack item = new ItemStack(Material.getMaterial(mat), amount);
+
+                                        if (chance >= random) {
+                                            if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("true")) { //Si enchantements
+                                                StringBuilder sb = new StringBuilder();
+                                                String[] enchant_nb;
+                                                String[] enchant_names;
+                                                sb.append(main.getConfig().getString("chest.item." + id + ".enchants"));
+
+                                                enchant_names = sb.toString().split("-");
+                                                for (int i = 0; i < enchant_names.length - 1; i++) { //Ajout des enchantements
+                                                    sb = new StringBuilder();
+                                                    sb.append(enchant_names[i + 1]);
+                                                    enchant_nb = sb.toString().split(" ");
+                                                    item.addEnchantment(Enchantment.getByName(enchant_nb[0].trim()), Integer.parseInt(enchant_nb[1].trim()));
+                                                }
+                                                int slot = rdm.nextInt(27);
+                                                while (invChest.getItem(slot) != null) {
+                                                    slot = rdm.nextInt(27);
+                                                }
+                                                invChest.setItem(slot, item); //ajout item si enchanté
                                             }
-                                            int slot = rdm.nextInt(27);
-                                            while (invChest.getItem(slot) != null) {
-                                                slot = rdm.nextInt(27);
-                                            }
-                                            invChest.setItem(slot, item); //ajout item si enchanté
-                                        }
 
-                                        if (main.getConfig().getString("chest.item." + id + ".sub").equalsIgnoreCase("true")) {
-                                            int subname = main.getConfig().getInt("chest.item." + id + ".subname");
-                                            ItemStack metaItem = new ItemStack(Material.getMaterial(mat), Integer.parseInt(String.valueOf(amount).trim()), (short) Integer.parseInt(String.valueOf(subname).trim()));
-                                            int slot = rdm.nextInt(27);
-                                            while (invChest.getItem(slot) != null) {
-                                                slot = rdm.nextInt(27);
-                                            }
-                                            invChest.setItem(slot, metaItem);
+                                            if (main.getConfig().getString("chest.item." + id + ".sub").equalsIgnoreCase("true")) {
+                                                int subname = main.getConfig().getInt("chest.item." + id + ".subname");
+                                                ItemStack metaItem = new ItemStack(Material.getMaterial(mat), Integer.parseInt(String.valueOf(amount).trim()), (short) Integer.parseInt(String.valueOf(subname).trim()));
+                                                int slot = rdm.nextInt(27);
+                                                while (invChest.getItem(slot) != null) {
+                                                    slot = rdm.nextInt(27);
+                                                }
+                                                invChest.setItem(slot, metaItem);
 
-                                        } else if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("false")) {
-                                            int slot = rdm.nextInt(27);
-                                            while (invChest.getItem(slot) != null) {
-                                                slot = rdm.nextInt(27);
+                                            } else if (main.getConfig().getString("chest.item." + id + ".enchanted").equalsIgnoreCase("false")) {
+                                                int slot = rdm.nextInt(27);
+                                                while (invChest.getItem(slot) != null) {
+                                                    slot = rdm.nextInt(27);
+                                                }
+                                                invChest.setItem(slot, item);
                                             }
-                                            invChest.setItem(slot, item);
                                         }
                                     }
+
+                                    nbItem++;
+                                } catch (NumberFormatException e) { //erreur config
+                                    System.out.println("ERROR: Il faut entrer un nombre après chest.item. !");
                                 }
 
-                                nbItem++;
-                            } catch (NumberFormatException e) { //erreur config
-                                System.out.println("ERROR: Il faut entrer un nombre après chest.item. !");
                             }
-
+                        } else {
+                            Bukkit.broadcastMessage("§eUne faction se trouvait au point de spawn, recommencez !");
+                            return true;
                         }
-                    } else {
-                        Bukkit.broadcastMessage("§eUne faction se trouvait au point de spawn, recommencez !");
-                        return true;
-                    }
 
+                    }
+                    else sender.sendMessage("Vous avez entrer trop d'arguments !");
                 }
             }
         }
         return true;
+    }
+
+
+    private Location getLocation(int xmax, int xmin, int zmax, int zmin, CommandSender cms) {
+        double x, y, z;
+        x = getCoord(xmax, xmin, cms);
+        z = getCoord(zmax, zmin, cms);
+        y = getHighestBlock(Bukkit.getWorld("world"), (int) x, (int) z);
+
+        if (xmax < xmin || zmax < zmin) {
+            cms.sendMessage("§eXmax et Ymax doivent être plus grands que Xmin et Ymin !");
+            return null;
+        }
+
+        Location locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
+        return locChest;
+    }
+
+    public int getCoord(int max, int min, CommandSender cms) {
+        int x;
+        int between;
+        int rand;
+        if (!isEquals(max, min)) {
+            if (isHighter(max, min)) {
+                if (max >= 0 && min >= 0) {    //101 101
+                    between = (max) - (min);
+                    rand = (int) getRandom(between);
+                    x = rand + min;
+                    return x;
+                } else if (max <= 0 && min <= 0) { //-100  -300
+                    between = max - min;
+                    rand = (int) getRandom(between);   //10
+                    x = max - rand;
+                    return x;
+                } else if (max >= 0 && min <= 0) { // 1000   -200
+                    between = max + Math.abs(min);
+                    rand = (int) getRandom(between); //1100
+                    x = min + rand;
+                    return x;
+                }
+            }
+        } else if (isEquals(max, min)) {
+            x = max;
+            return x;
+        }
+        return 0;
+    }
+
+    public boolean isHighter(int a, int b) {
+        if (a > b) {
+            return true;
+        } else return false;
+    }
+
+    public boolean isEquals(int a, int b) {
+        if (a == b) {
+            return true;
+        } else return false;
     }
 
     public int getHighestBlock(World world, int x, int z) { //get le block le plus haut
