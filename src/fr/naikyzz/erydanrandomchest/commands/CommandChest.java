@@ -21,7 +21,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Random;
 
-import static org.apache.commons.lang.StringUtils.isNumeric;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 public class CommandChest implements CommandExecutor, Listener {
 
@@ -69,8 +69,14 @@ public class CommandChest implements CommandExecutor, Listener {
                         return false;
                     }
 
+                    if (args.length != 4) {
+                        sender.sendMessage("§eVous devez entrer 4 coordonnés !");
+                        sender.sendMessage("§eLa commande est: §c/rcr §c<Xmax> <Xmin> <Ymax> <Ymin> !");
+                        return false;
+                    }
 
                     if (args.length >= 1 && args.length < 5) { // met les arguments dans un string builder
+
                         StringBuilder bc = new StringBuilder();
                         String[] tab;
 
@@ -81,12 +87,20 @@ public class CommandChest implements CommandExecutor, Listener {
                         bc.setLength(bc.length() - 1);
                         tab = bc.toString().split(" ");
 
-                        for (int i = 0; i < tab.length; i++){
-                            if (!isNumeric(tab[i])){
-                                sender.sendMessage("§eVous devez entrer des nombres !");
-                                return false;
-                            }
-                            if (Integer.parseInt(tab[i].trim()) > Integer.parseInt(main.getConfig().getString("chest.maxWorld")) || Integer.parseInt(tab[i].trim()) < Integer.parseInt(main.getConfig().getString("chest.minWorld"))){
+
+                        for (int i = 0; i < tab.length; i++) {
+                            if (tab[i].charAt(0) == '-'){
+                                String nbNeg = tab[i].replace("-","");
+                                if (!isNumeric(nbNeg)){
+                                    sender.sendMessage("§eVous devez entrer des nombres !");
+                                    return false;
+                                }
+                            } else if (!isNumeric(tab[i]) && tab[i].trim().charAt(0) != '-') { //TROUVER TECHNIQUE POUR GERER LES NOMBRES NEGATIFS StringBuilder pour enelver le - ? replace ?
+                                    sender.sendMessage("§eVous devez entrer des nombres !");
+                                    return false;
+                                }
+
+                            if (Integer.parseInt(tab[i].trim()) > Integer.parseInt(main.getConfig().getString("chest.maxWorld")) || Integer.parseInt(tab[i].trim()) < Integer.parseInt(main.getConfig().getString("chest.minWorld"))) {
                                 sender.sendMessage("§eLes limites du monde sont de : §c" + main.getConfig().getString("chest.maxWorld") + " §epar §c" + main.getConfig().getString("chest.minWorld") + " §e!");
                                 return false;
                             }
@@ -111,7 +125,7 @@ public class CommandChest implements CommandExecutor, Listener {
 
                         spawnChest(locChest, fac); // fait spawn un coffre
 
-                    } else sender.sendMessage("§eVous avez entrer trop d'arguments !");
+                    } else sender.sendMessage("§eVous devez entrer 4 coordonnés !");
                 }
             }
         }
@@ -193,13 +207,44 @@ public class CommandChest implements CommandExecutor, Listener {
         x = getCoord(xmax, xmin, cms);
         z = getCoord(zmax, zmin, cms);
         y = getHighestBlock(Bukkit.getWorld("world"), (int) x, (int) z);
+        Location locChest;
+        Location locBlock = new Location(Bukkit.getWorld("world"), x, y, z);
+        cms.sendMessage("pass");
+        cms.sendMessage(String.valueOf(locBlock.getBlock().getType()));
+        while (locBlock.getBlock().getType() == Material.STATIONARY_WATER || locBlock.getBlock().getType() == Material.STATIONARY_LAVA) { //check que ce soit pas de l'eau ou de la lave
+            x = getCoord(xmax += 10, xmin += 10, cms);
+            z = getCoord(zmax += 10, zmin += 10, cms);
+            locBlock = new Location(Bukkit.getWorld("world"), x, y - 1, z);
+            y = getHighestBlock(Bukkit.getWorld("world"), (int) x, (int) z);
+        }
+
+        if (locBlock.getBlock().getType() == Material.LONG_GRASS
+                || locBlock.getBlock().getType() == Material.RED_ROSE
+                || locBlock.getBlock().getType() == Material.YELLOW_FLOWER){
+            x = locBlock.getBlockX();
+            y = locBlock.getBlockY();
+            z = locBlock.getBlockZ();
+
+            locChest = new Location(Bukkit.getWorld("world"), x, y, z);
+            return locChest;
+        }
+
+        if (locBlock.getBlock().getType() == Material.DOUBLE_PLANT){
+            x = locBlock.getBlockX();
+            y = locBlock.getBlockY();
+            z = locBlock.getBlockZ();
+
+            locChest = new Location(Bukkit.getWorld("world"), x, y - 1, z);
+            return locChest;
+        }
+
+        locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
 
         if (xmax < xmin || zmax < zmin) {
             cms.sendMessage("§eXmax et Ymax doivent être plus grands que Xmin et Ymin !");
             return null;
         }
 
-        Location locChest = new Location(Bukkit.getWorld("world"), x, y + 1, z);
         return locChest;
     }
 
@@ -234,19 +279,14 @@ public class CommandChest implements CommandExecutor, Listener {
     }
 
     public boolean isHighter(int a, int b) {
-        if (a > b) {
-            return true;
-        } else return false;
+        return a > b;
     }
 
     public boolean isEquals(int a, int b) {
-        if (a == b) {
-            return true;
-        } else return false;
+        return a == b;
     }
 
     public int getHighestBlock(World world, int x, int z) { //get le block le plus haut
-
         for (int i = 150; i != 0; i--) {
             if (new Location(world, x, i, z).getBlock().getType() != Material.AIR) {
                 return i;
